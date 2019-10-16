@@ -46,8 +46,6 @@ var insects_data = {
     }
 }
 
-
-
 function preload(){
     queue = new createjs.LoadQueue();
     queue.addEventListener("complete", init);
@@ -68,14 +66,83 @@ function init(){
     createInsects();
     addLeavesAndInsects();
     addFrog();    
+    setFrogPosition();
     startGame();
 }
 
 function startGame(){
     createjs.Ticker.framerate = 60;
     createjs.Ticker.addEventListener('tick', function(e){
+        gameLoop();        
         stage.update();
     });
+}
+
+
+function gameLoop(){
+    updateRiver();
+    updateLeaves();
+    updateFrog();
+}
+
+
+function updateRiver(){
+    riverStreamMatrix.ty += 1;
+    if(riverStreamMatrix.ty > 800){
+        riverStreamMatrix.ty = 0;
+    }
+}
+
+function updateLeaves(){
+    for(var i=0; i<leaves.length; i++){
+        var leaf = leaves[i];
+        leaf.rotation += leaf.rotationStep;
+        leaf.x += leaf.velX;
+        if(leaf.x < 275 || leaf.x > 525){
+            leaf.velX *= -1;
+        }
+
+        leaf.y += leaf.velY;
+        if(leaf.y > 700){
+            leaf.x = SIDE_GRASS_WIDTH + 100 + Math.floor(Math.random() * 200);
+            leaf.y = -50;
+            leaf.rotationStep = Math.random()*1 - 0.5;
+
+            if(leaf.numChildren < 2){
+                addInsect(leaf);
+            }
+        }
+
+        
+    }
+}
+
+function updateFrog(){
+    if(frog.status == "seating"){
+        var frogLeaf = leaves[frog.onTheLeaf];
+        frog.x = frogLeaf.x;
+        frog.y = frogLeaf.y;
+        frog.rotation += frogLeaf.rotationStep;
+
+        if(frog.y > 650){
+            setFrogPosition();
+        }
+    }
+}
+
+function removeInsect(leafContainer){
+    leafContainer.removeChildAt(1);
+}
+
+function setFrogPosition(){
+    for(var i=0; i<leaves.length; i++){
+        var leaf = leaves[i];
+        if(leaf.y > 200 && leaf.y < 400){
+            frog.onTheLeaf = i;
+            removeInsect(leaf);
+            break;
+        }
+    }
 }
 
 function buildGameBackground(){    
@@ -168,3 +235,5 @@ function addFrog(){
     frog.status = "seating";
     stage.addChild(frog);
 }
+
+
