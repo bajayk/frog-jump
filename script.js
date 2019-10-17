@@ -14,6 +14,10 @@ const SIDE_GRASS_WIDTH = 200;
 const RIVER_WIDTH = 400;
 const FOLIAGE_WIDTH = 66;
 
+const ARROW_KEY_LEFT = 37;
+const ARROW_KEY_RIGHT = 39;
+const SPACEBAR = 32;
+
 var frog_data = {
     "images":["assets/frog_spritesheet.png"],
     "frames":[
@@ -68,7 +72,85 @@ function init(){
     addFrog();    
     setFrogPosition();
     startGame();
+
+    window.onkeydown = moveFrog;
 }
+
+function moveFrog(e){
+    switch(e.keyCode){
+        case ARROW_KEY_LEFT: // turn frog left
+            frog.rotation -= 10;
+            break;
+        case ARROW_KEY_RIGHT: // turn frog right
+            frog.rotation += 10;
+            break;
+        case SPACEBAR: // to jump
+            jumpFrog();
+            break;
+        default: // Nothing will happen
+            break;
+    }
+}
+
+function jumpFrog(){
+    var angle = toRadians(frog.rotation);
+    var jumpDistance = 200;
+    var currentPosition = new createjs.Point(frog.x, frog.y);
+    var targetPosition = new createjs.Point();
+
+    var xDistance = Math.sin(angle) * jumpDistance;
+    var yDistance = Math.cos(angle) * jumpDistance;
+    
+    targetPosition.x = currentPosition.x + xDistance;
+    targetPosition.y = currentPosition.y - yDistance;
+    
+
+    if(frog.status == 'seating'){
+        frog.status = 'jumping';
+        frog.gotoAndStop('jumping');
+        createjs.Tween.get(frog, {override:true, onChange:frogJumpProgress}).to({x:targetPosition.x, y:targetPosition.y}, 300).call(frogJumpComplete);
+    }
+}
+
+function frogJumpProgress(){
+    var hit = false;
+
+    for(var i=0; i<leaves.length; i++){
+
+        if(frog.onTheLeaf == i){
+            continue;
+        }
+
+        var leaf = leaves[i];
+        var pt = leaf.globalToLocal(frog.x, frog.y);
+        hit = leaf.hitTest(pt.x, pt.y);
+
+        if(hit){
+            frog.onTheLeaf = i;
+            removeInsect(leaf);
+            frog.status = 'seating';
+            frog.gotoAndStop('seating');
+            createjs.Tween.get(frog, {override:true});
+            break;
+        }
+
+    }
+}
+
+function frogJumpComplete(){
+    frog.visible = false;
+    frog.status = 'seating';
+    frog.gotoAndStop('seating');
+    setTimeout(function(){
+        frog.visible = true;
+        setFrogPosition();
+    }, 3000);
+}
+
+function toRadians(angle){
+    return angle * (Math.PI / 180);
+}
+
 
 function startGame(){
     createjs.Ticker.framerate = 60;
