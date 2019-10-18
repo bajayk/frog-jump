@@ -4,10 +4,16 @@ var riverStreamMatrix, riverStream;
 var insects_sequence;
 var frog_sequence;
 var frog;
+var startScreen;
+
+var gameRuning = false;
+var isGameOver = false;
 
 
 var insects = [];
 var leaves = [];
+var score = [];
+var lives = [];
 
 //constants
 const SIDE_GRASS_WIDTH = 200;
@@ -71,24 +77,35 @@ function init(){
     addLeavesAndInsects();
     addFrog();    
     setFrogPosition();
+    buildScoreBoard();
+    buildLifeBoard();
+    buildStartSreen();
     startGame();
 
     window.onkeydown = moveFrog;
 }
 
 function moveFrog(e){
-    switch(e.keyCode){
-        case ARROW_KEY_LEFT: // turn frog left
-            frog.rotation -= 10;
-            break;
-        case ARROW_KEY_RIGHT: // turn frog right
-            frog.rotation += 10;
-            break;
-        case SPACEBAR: // to jump
-            jumpFrog();
-            break;
-        default: // Nothing will happen
-            break;
+
+    if(gameRuning){    
+
+        switch(e.keyCode){
+            case ARROW_KEY_LEFT: // turn frog left
+                frog.rotation -= 10;
+                break;
+            case ARROW_KEY_RIGHT: // turn frog right
+                frog.rotation += 10;
+                break;
+            case SPACEBAR: // to jump
+                jumpFrog();
+                break;
+            default: // Nothing will happen
+                break;
+        }
+
+    }else if(isGameOver == false){
+        gameRuning = true;
+        stage.removeChild(startScreen);
     }
 }
 
@@ -127,6 +144,10 @@ function frogJumpProgress(){
 
         if(hit){
             frog.onTheLeaf = i;
+            var insect = leaf.getChildAt(1);
+            var insectIndex = insect.currentFrame;
+            score[insectIndex].text += 1;
+
             removeInsect(leaf);
             frog.status = 'seating';
             frog.gotoAndStop('seating');
@@ -145,6 +166,15 @@ function frogJumpComplete(){
         frog.visible = true;
         setFrogPosition();
     }, 3000);
+    removeOneLife();
+}
+
+function removeOneLife(){
+    if(lives.length > 0){
+        stage.removeChild(lives.pop());
+    }else if(gameRuning){
+        gameOver();
+    }
 }
 
 function toRadians(angle){
@@ -155,7 +185,10 @@ function toRadians(angle){
 function startGame(){
     createjs.Ticker.framerate = 60;
     createjs.Ticker.addEventListener('tick', function(e){
-        gameLoop();        
+        if(gameRuning){
+            gameLoop();
+        }
+        
         stage.update();
     });
 }
@@ -208,6 +241,7 @@ function updateFrog(){
 
         if(frog.y > 650){
             setFrogPosition();
+            removeOneLife();
         }
     }
 }
@@ -318,4 +352,74 @@ function addFrog(){
     stage.addChild(frog);
 }
 
+function buildScoreBoard(){
+    for(var i=0; i<insects.length; i++){
+        var insect = insects[i].clone();
+        insect.x = SIDE_GRASS_WIDTH + RIVER_WIDTH + 75;
+        insect.y = 75 * i + 100;
+        stage.addChild(insect);
 
+        var txt = new createjs.Text(0, "35px Arial", "#ff7700");
+        txt.textBaseline = "middle";
+        txt.textAlign = "right";
+        txt.x = SIDE_GRASS_WIDTH + RIVER_WIDTH + 150;
+        txt.y = 75 * i + 100;
+        stage.addChild(txt);
+        score.push(txt);
+    }
+}
+
+function buildLifeBoard(){
+    for(var i=0; i<5; i++){
+        var life = frog.clone();
+        life.x = 90;
+        life.y = i * 100 + 100;
+        life.shodow = new createjs.Shadow("#fff", 0, 0, 5);
+        stage.addChild(life);
+        lives.push(life);
+    }
+}
+
+
+function buildStartSreen(){
+    startScreen = new createjs.Container();
+    startScreen.x = stage.canvas.width/2;
+    startScreen.y = stage.canvas.height/2;
+    stage.addChild(startScreen);
+
+    var line1 = new createjs.Text("FROGGY","72px Righteous", "#11ff11");
+    line1.textAlign = "center";
+    line1.y = -200;
+    startScreen.addChild(line1);
+    
+    var line2 = new createjs.Text("Press any key to","24px Righteous", "#fff");
+    line2.textAlign = "center";
+    line2.y = -100;
+    startScreen.addChild(line2);
+    
+    var line3 = new createjs.Text("Start Game","48px Righteous", "#fff");
+    line3.textAlign = "center";
+    line3.y = -40;
+    startScreen.addChild(line3);
+    
+    var line4 = new createjs.Text("Use left and right arrow key to turn left right","24px Righteous", "#fff");
+    line4.textAlign = "center";
+    line4.y = 50;
+    startScreen.addChild(line4);
+    
+    var line5 = new createjs.Text("Spacebar to Jump","24px Righteous", "#fff");
+    line5.textAlign = "center";
+    line5.y = 80;
+    startScreen.addChild(line5);
+}
+
+function gameOver(){
+    gameRuning = false;
+    isGameOver = true;
+    var text = new createjs.Text("Game Over", "48px Righteous", "#fff");
+    text.textBaseline = "middle";
+    text.textAlign = "center";
+    text.x = stage.canvas.width / 2;
+    text.y = stage.canvas.height / 2;
+    stage.addChild(text);
+}
